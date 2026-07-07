@@ -4,8 +4,7 @@ using Random
 using Statistics
 using DataFrames
 
-include(joinpath(@__DIR__, "..", "src", "EvoShifts.jl"))
-using .EvoShifts
+using EvoShifts
 
 const SUBSET_TESTS = Dict(
     "continuous/shifts/core" => "continuous/shifts/core.jl",

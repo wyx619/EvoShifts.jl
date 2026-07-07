@@ -1,11 +1,11 @@
 name = "EvoShifts"
 uuid = "d5b32d8a-93cc-4d76-9d19-4d9629e784de"
-version = "0.1.0"
-authors = ["MSI + OpenAI Codex"]
+version = "1.0.0"
+authors = ["FFC"]
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8d"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 NewickTree = "b0a14db8-6308-4ebc-8917-f72cd81f5094"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"

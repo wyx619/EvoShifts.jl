@@ -4,8 +4,7 @@ using Random
 using Statistics
 using DataFrames
 
-include(joinpath(@__DIR__, "..", "src", "EvoShifts.jl"))
-using .EvoShifts
+using EvoShifts
 
 include("continuous/shifts/core.jl")
 include("continuous/shifts/proposal.jl")
