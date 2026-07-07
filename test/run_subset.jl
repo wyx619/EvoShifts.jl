@@ -1,0 +1,40 @@
+using Test
+using LinearAlgebra
+using Random
+using Statistics
+using DataFrames
+
+include(joinpath(@__DIR__, "..", "src", "EvoShifts.jl"))
+using .EvoShifts
+
+const SUBSET_TESTS = Dict(
+    "continuous/shifts/core" => "continuous/shifts/core.jl",
+    "continuous/shifts/proposal" => "continuous/shifts/proposal.jl",
+    "continuous/shifts/fit_and_ic" => "continuous/shifts/fit_and_ic.jl",
+    "continuous/shifts/missing" => "continuous/shifts/missing.jl",
+    "continuous/shifts/detection_and_convergence" => "continuous/shifts/detection_and_convergence.jl",
+)
+
+function _normalize_subset_arg(arg::AbstractString)
+    normalized = replace(arg, '\\' => '/')
+    normalized = startswith(normalized, "test/") ? normalized[6:end] : normalized
+    normalized = endswith(normalized, ".jl") ? normalized[1:end - 3] : normalized
+    return normalized
+end
+
+if isempty(ARGS)
+    println("Usage: julia --project=. test/run_subset.jl <subset> [<subset> ...]")
+    println("Available subsets:")
+    for name in sort!(collect(keys(SUBSET_TESTS)))
+        println("  ", name)
+    end
+    exit(1)
+end
+
+for raw_arg in ARGS
+    subset = _normalize_subset_arg(raw_arg)
+    haskey(SUBSET_TESTS, subset) || error("Unknown test subset: $raw_arg")
+    @testset "subset: $subset" begin
+        include(joinpath(@__DIR__, SUBSET_TESTS[subset]))
+    end
+end
