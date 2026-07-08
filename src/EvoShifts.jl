@@ -8,36 +8,16 @@ using NewickTree
 using Optim
 using DataFrames
 
-include("core/types.jl")
-
-Base.@kwdef struct SimmapSegment
-    state::Int32
-    length::Float64
-end
-
-include("core/io.jl")
-include("core/criteria.jl")
-
-include("tree/phylomap/phylomap.jl")
-include("tree/prune.jl")
-
-include("simulate/common.jl")
-include("simulate/tree/io.jl")
-include("simulate/tree/yule.jl")
-include("simulate/traits/bm.jl")
-
-include("continuous/checks.jl")
-include("continuous/reconstruction/core/messages.jl")
-include("continuous/reconstruction/core/posterior.jl")
-include("continuous/univariate/shared_optimize.jl")
-include("continuous/univariate/ou_common/specs.jl")
-include("continuous/univariate/ou_common/params.jl")
-include("continuous/univariate/ou_common/edges.jl")
-include("continuous/univariate/ou_common/likelihood.jl")
-include("continuous/univariate/ou_common/optimize.jl")
-include("continuous/univariate/ou_common/fit.jl")
-
-include("shifts.jl")
+include("base/entry.jl")
+include("core/entry.jl")
+include("simulate/entry.jl")
+include("model/entry.jl")
+include("proposal/entry.jl")
+include("refit/entry.jl")
+include("search/entry.jl")
+include("convergence/entry.jl")
+include("io/entry.jl")
+include("api/entry.jl")
 
 export EngineConfig
 export CompactTree
