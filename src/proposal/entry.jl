@@ -1,4 +1,3 @@
-include("common/common.jl")
-include("univariate/candidates.jl")
-include("univariate/screening.jl")
-include("multivariate.jl")
+include("common.jl")
+include("univariate.jl")
+include("multivariate/entry.jl")

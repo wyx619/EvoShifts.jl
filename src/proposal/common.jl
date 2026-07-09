@@ -1,4 +1,4 @@
-﻿@inline function _soft_threshold(z::Float64, lambda::Float64)
+@inline function _soft_threshold(z::Float64, lambda::Float64)
     if z > lambda
         return z - lambda
     elseif z < -lambda
@@ -251,4 +251,3 @@ function _build_screening_prefix_anchor_family(
     end
     return configs
 end
-
