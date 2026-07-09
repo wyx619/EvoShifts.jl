@@ -184,4 +184,3 @@ function multistartserial(
     end
     return best
 end
-
