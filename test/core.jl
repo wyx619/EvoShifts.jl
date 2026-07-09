@@ -1,4 +1,7 @@
-﻿function _core_shift_tree()
+using Test
+using EvoShifts
+
+function _core_shift_tree()
     path = joinpath(mktempdir(), "shift_core.tre")
     write(path, "(((A:1,B:1):2,(C:1.5,D:1.5):1.5):1,(E:2,F:2):2);")
     return to_compact_tree(load_newick_tree(path))
@@ -147,5 +150,3 @@ end
     @test isempty(unchanged.removed_edges)
     @test unchanged.score.score == 1.0
 end
-
-

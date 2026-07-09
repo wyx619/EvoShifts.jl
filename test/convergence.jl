@@ -1,7 +1,8 @@
-﻿using LinearAlgebra
+using LinearAlgebra
 using Random
 using Statistics
 using Test
+using EvoShifts
 
 function _shift_test_tree(seed::Integer = 900)
     simtree = simulate_yule_simtree(100; tree_height = 1.0, rng = MersenneTwister(seed))
@@ -295,5 +296,3 @@ end
     @test !isempty(result.edge_segments)
     @test length(result.edge_regimes) == tree.nedges
 end
-
-

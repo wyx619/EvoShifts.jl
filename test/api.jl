@@ -1,4 +1,8 @@
-﻿function _shift_missing_tree()
+using Test
+using DataFrames
+using EvoShifts
+
+function _shift_missing_tree()
     path = joinpath(mktempdir(), "shift_missing_tree.tre")
     write(path, "(((A:1,B:1):1,(C:1,D:1):1):1,(E:1,F:1):2);")
     return to_compact_tree(load_newick_tree(path))
@@ -122,4 +126,3 @@ end
     )
     @test proposal.diagnostics.proposal_method == :l1ou_sqrt_inv_cov_missing
 end
-

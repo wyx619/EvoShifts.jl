@@ -1,4 +1,8 @@
-﻿function _proposal_shift_tree()
+using Test
+using LinearAlgebra
+using EvoShifts
+
+function _proposal_shift_tree()
     path = joinpath(mktempdir(), "shift_proposal.tre")
     write(path, "(((A:1,B:1):2,(C:1.5,D:1.5):1.5):1,(E:2,F:2):2);")
     return to_compact_tree(load_newick_tree(path))
@@ -257,7 +261,6 @@ end
     @test proposal.diagnostics.n_configs == length(proposal.configs)
     @test all(cfg -> length(cfg) <= 4, proposal.configs)
     @test all(cfg -> all(e -> e in candidates, cfg), proposal.configs)
-
 end
 
 @testset "l1ou row-filtered tree-pruning operator matches dense rows" begin
@@ -378,6 +381,3 @@ end
     @test length(limited.configs) <= length(full.configs)
     @test limited.diagnostics.min_shared_score == 2.0
 end
-
-
-

@@ -1,4 +1,8 @@
-﻿function _fit_ic_tree()
+using Test
+using DataFrames
+using EvoShifts
+
+function _fit_ic_tree()
     path = joinpath(mktempdir(), "shift_fit_ic.tre")
     write(path, "(((A:1,B:1):2,(C:1.5,D:1.5):1.5):1,(E:2,F:2):2);")
     return to_compact_tree(load_newick_tree(path))
@@ -302,5 +306,3 @@ end
     @test chosen == det.shift_edges
     @test all(cfg.score <= prof[end].score for cfg in prof)
 end
-
-
