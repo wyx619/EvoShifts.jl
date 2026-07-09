@@ -1,4 +1,3 @@
-﻿
 @inline function _zero_shift_cross_profile!(cross::AbstractMatrix{Float64}, k::Integer)
     kk = Int(k)
     @inbounds begin
@@ -207,3 +206,132 @@ function _shift_tip_crossproducts_root_fixed(
     return (success = isfinite(logdet_info), cross = ws.cross, logdet = logdet_info)
 end
 
+function _profile_oum_fixed_alpha(
+    tree::CompactTree,
+    trait::AbstractVector{<:Real},
+    cache::OUMEdgeSegmentCache,
+    alpha::Float64,
+    cross_workspace::Union{Nothing, _ShiftCrossproductWorkspace} = nothing;
+    keep_theta::Bool = true,
+    root_model::Symbol = :OUfixedRoot,
+)
+    root_model = _normalize_ou_root_model(root_model)
+    isfinite(alpha) && alpha > 0.0 || return (success = false, loglik = -Inf, alpha = alpha, sigma2 = NaN, theta = Float64[])
+    n = tree.ntips
+    edge_a, edge_v =
+        cross_workspace === nothing ?
+        _shift_screening_edges(tree, alpha, 1.0) :
+        _fill_shift_screening_edges!(cross_workspace.edge_a, cross_workspace.edge_v, tree, alpha)
+    z =
+        cross_workspace === nothing ?
+        _fill_oum_profile_z!(
+            Matrix{Float64}(undef, n, cache.nregimes + 1),
+            tree,
+            cache,
+            trait,
+            alpha,
+            Matrix{Float64}(undef, tree.nnodes, cache.nregimes),
+        ) :
+        _fill_oum_profile_z!(
+            cross_workspace.z,
+            tree,
+            cache,
+            trait,
+            alpha,
+            @view(cross_workspace.means[:, 1:cache.nregimes]),
+        )
+    cross = _shift_tip_crossproducts_root_fixed(tree, z, edge_a, edge_v, cross_workspace, root_model, alpha; profile_only = true)
+    cross.success || return (success = false, loglik = -Inf, alpha = alpha, sigma2 = NaN, theta = Float64[])
+
+    yy = cross.cross[1, 1]
+    p = cache.nregimes
+    Xy = cross_workspace === nothing ? Vector{Float64}(undef, p) : cross_workspace.xy
+    XX = cross_workspace === nothing ? Matrix{Float64}(undef, p, p) : cross_workspace.xx
+    XXfactor = cross_workspace === nothing ? Matrix{Float64}(undef, p, p) : cross_workspace.xx_factor
+    theta_buf = cross_workspace === nothing ? Vector{Float64}(undef, p) : cross_workspace.theta
+    @inbounds for j in 1:p
+        Xy[j] = cross.cross[j + 1, 1]
+        for h in j:p
+            XXfactor[j, h] = cross.cross[j + 1, h + 1]
+        end
+    end
+
+    theta =
+        try
+            if !_profile_cholesky_solve!(theta_buf, XXfactor, Xy)
+                _fill_profile_xx_fallback!(XX, cross.cross, p)
+                theta_buf .= qr(XX, ColumnNorm()) \ Xy
+            end
+            theta_buf
+        catch
+            try
+                _fill_profile_xx_fallback!(XX, cross.cross, p)
+                theta_buf .= svd(XX) \ Xy
+                theta_buf
+            catch
+                return (success = false, loglik = -Inf, alpha = alpha, sigma2 = NaN, theta = Float64[])
+            end
+        end
+    rss = yy - dot(theta, Xy)
+    rss > 0.0 && isfinite(rss) || return (success = false, loglik = -Inf, alpha = alpha, sigma2 = NaN, theta = Float64[])
+    sigma2 = rss / n
+    f0 = Float64(cross.logdet) + n * log(2π)
+    loglik = -0.5 * (f0 + n * log(sigma2) + n)
+    return (
+        success = isfinite(loglik),
+        loglik = loglik,
+        alpha = alpha,
+        sigma2 = sigma2,
+        theta = keep_theta ? Vector{Float64}(theta) : Float64[],
+    )
+end
+
+function _profile_refit_ou_shift_config(
+    tree::CompactTree,
+    trait::AbstractVector{<:Real},
+    cache::OUMEdgeSegmentCache;
+    max_iterations::Integer = 80,
+    rel_tol::Float64 = 1e-6,
+    start_alpha::Union{Nothing, Real} = nothing,
+    cross_workspace::Union{Nothing, _ShiftCrossproductWorkspace} = nothing,
+    alpha_floor::Real = 1e-4,
+    root_model::Symbol = :OUfixedRoot,
+)
+    root_model = _normalize_ou_root_model(root_model)
+    tree_height = maximum(tree.dist_from_root[tree.tip_ids])
+    default_alpha = max(log(2.0) / max(tree_height / 4.0, 1e-8), 1e-8)
+    floor = max(Float64(alpha_floor), eps(Float64))
+    center = start_alpha === nothing ? default_alpha : max(Float64(start_alpha), floor)
+    lower = floor < 1e-4 ? log(floor) : max(log(floor), log(center) - log(100.0))
+    upper = min(log(max(1e3 / max(tree_height, 1e-8), 100.0)), log(center) + log(100.0))
+    lower < upper || (lower, upper = (log(1e-8), log(max(1e3 / max(tree_height, 1e-8), 100.0))))
+
+    k = cache.nregimes + 1
+    if cross_workspace === nothing || !_compatible_shift_workspace(cross_workspace, tree, k)
+        cross_workspace = _shift_crossproduct_workspace(tree, k)
+    end
+    objective = log_alpha -> begin
+        fit = _profile_oum_fixed_alpha(
+            tree,
+            trait,
+            cache,
+            exp(Float64(log_alpha)),
+            cross_workspace;
+            keep_theta = false,
+            root_model = root_model,
+        )
+        fit.success ? -fit.loglik : Inf
+    end
+    result = Optim.optimize(
+        objective,
+        lower,
+        upper,
+        Optim.Brent();
+        iterations = Int(max_iterations),
+        rel_tol = rel_tol,
+        abs_tol = rel_tol,
+    )
+    alpha_hat = exp(Optim.minimizer(result))
+    fit = _profile_oum_fixed_alpha(tree, trait, cache, alpha_hat, cross_workspace; root_model = root_model)
+    return (fit = fit, result = result)
+end

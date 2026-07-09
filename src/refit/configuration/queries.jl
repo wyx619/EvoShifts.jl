@@ -1,4 +1,4 @@
-﻿function profile_configurations(
+function profile_configurations(
     det::OUShiftDetectionResult;
     n_shifts::Union{Nothing, Integer} = nothing,
 )
@@ -56,4 +56,3 @@ function best_shift_configuration(det::OUShiftDetectionResult)
     det.success || throw(ArgumentError("shift detection result is not successful"))
     return copy(det.shift_edges)
 end
-
