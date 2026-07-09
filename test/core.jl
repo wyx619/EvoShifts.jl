@@ -1,4 +1,5 @@
 using Test
+using LinearAlgebra
 using EvoShifts
 
 function _core_shift_tree()
