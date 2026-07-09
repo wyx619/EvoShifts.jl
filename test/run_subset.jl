@@ -7,11 +7,11 @@ using DataFrames
 using EvoShifts
 
 const SUBSET_TESTS = Dict(
-    "continuous/shifts/core" => "continuous/shifts/core.jl",
-    "continuous/shifts/proposal" => "continuous/shifts/proposal.jl",
-    "continuous/shifts/fit_and_ic" => "continuous/shifts/fit_and_ic.jl",
-    "continuous/shifts/missing" => "continuous/shifts/missing.jl",
-    "continuous/shifts/detection_and_convergence" => "continuous/shifts/detection_and_convergence.jl",
+    "core" => "core.jl",
+    "proposal" => "proposal.jl",
+    "refit" => "refit.jl",
+    "api" => "api.jl",
+    "convergence" => "convergence.jl",
 )
 
 function _normalize_subset_arg(arg::AbstractString)
