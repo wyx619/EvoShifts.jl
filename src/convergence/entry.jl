@@ -1,4 +1,4 @@
-include("common/common.jl")
-include("common/cr_score.jl")
-include("univariate/convergence.jl")
-include("multivariate/convergence.jl")
+include("common.jl")
+include("cr_score.jl")
+include("univariate.jl")
+include("multivariate.jl")
