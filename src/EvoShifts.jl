@@ -5,6 +5,7 @@ using LinearAlgebra
 using Statistics
 using Random
 using NewickTree
+using NLopt
 using Optim
 using DataFrames
 
