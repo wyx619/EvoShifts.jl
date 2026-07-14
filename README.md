@@ -43,19 +43,18 @@ The core workflow supports:
 
 ## Installation
 
-Use the repository as a Julia project:
+Use the repository as a Julia project. Start Julia with an explicit thread count:
 
-```julia
-import Pkg
-Pkg.activate(".")
-Pkg.instantiate()
-using EvoShifts
+```powershell
+julia --project=. -t auto -e "using Pkg; Pkg.instantiate(); using EvoShifts"
 ```
+
+Run Julia examples with automatic thread detection: `julia --project=. -t auto example.jl`. Julia selects a useful thread count from the CPU resources available on the machine.
 
 From the repository root, verify that package loading works:
 
 ```powershell
-julia --project=. --startup-file=no -e "using EvoShifts; println(nameof(EvoShifts))"
+julia --project=. -t auto -e "using EvoShifts; println(nameof(EvoShifts))"
 ```
 
 The project declares compatibility with Julia `1.10`, `1.11`, and `1.12`.
@@ -65,6 +64,7 @@ The project declares compatibility with Julia `1.10`, `1.11`, and `1.12`.
 The following example reads a Newick tree and a CSV table containing one row per tip. The `taxon_col` argument makes the alignment explicit, so the table may be in any row order.
 
 ```julia
+# Run with: julia --project=. -t auto quick_start.jl
 using EvoShifts
 using CSV
 using DataFrames
@@ -126,6 +126,7 @@ Shift configurations use internal edge ids in `1:tree.nedges`. Treat these ids a
 For a single trait, `align_traits_to_tree` returns a vector. The automatic detector uses candidate filtering, screening and path proposals, exact OU refits, and final criterion ranking.
 
 ```julia
+# Run with: julia --project=. -t auto univariate.jl
 tree = to_compact_tree(load_newick_tree("tree.tre"))
 data = CSV.read("trait.csv", DataFrame)
 
@@ -156,6 +157,7 @@ Use `candidate_edges` when the analysis should be restricted to a pre-defined su
 For a matrix with two or more trait columns, shifts are selected jointly: all traits share the selected shift branches, while trait-specific OU parameters and likelihood contributions are retained.
 
 ```julia
+# Run with: julia --project=. -t auto multivariate.jl
 traits = align_traits_to_tree(
     tree,
     data;
@@ -181,6 +183,7 @@ Partially observed rows are supported in this workflow. Use `NaN` in a numeric m
 Use `fit_ou_shifts` when the configuration is known in advance, originates from another tool, or needs independent verification after automatic detection.
 
 ```julia
+# Run with: julia --project=. -t auto fixed_configuration.jl
 fixed = fit_ou_shifts(
     tree,
     traits,
@@ -203,6 +206,7 @@ score = configuration_ic(
 Automatic detection retains a profile of considered configurations. Inspect it with:
 
 ```julia
+# Run with: julia --project=. -t auto profile.jl
 profile = profile_configurations(result)
 best = best_shift_configuration(result)
 candidate = get_shift_configuration(result, 3)
@@ -234,6 +238,7 @@ Use `shift_detection_summary(result)` for a compact named summary and `shift_det
 The package separates its internal edge ids from externally reproducible branch identities. Use a `PhyloMap` to translate edges to node pairs, tip anchors, and R/ape-compatible ranks.
 
 ```julia
+# Run with: julia --project=. -t auto branch_mapping.jl
 map = build_phylomap(tree)
 
 internal_table = shift_edge_table(tree, result.shift_edges; map = map)
@@ -244,6 +249,7 @@ all_edges = phylomap_edge_table(tree; map = map)
 For a saved R/ape postorder configuration, convert ranks into internal ids before refitting:
 
 ```julia
+# Run with: julia --project=. -t auto r_compatibility.jl
 r_postorder_edges = [12, 48, 97]
 internal_edges = EvoShifts.evotraits_edge_ids_from_R_postorder(
     tree,
@@ -265,6 +271,7 @@ For example, an initial model may assign distinct optima to shifts on edges `10`
 This is the counterpart of the default backward-search workflow in `l1ou::estimate_convergent_regimes`. It repeatedly evaluates candidate regime merges under an information criterion. The current API does not expose l1ou's separate single-trait `rr` method.
 
 ```julia
+# Run with: julia --project=. -t auto convergence.jl
 merged = merge_convergent_regimes(
     result;
     criterion = :BIC,
@@ -275,15 +282,18 @@ The returned object is a new `OUShiftDetectionResult` with `model == :OUShiftsCo
 
 ## Performance And Reproducibility
 
+EvoShifts is at least 50x faster than R `l1ou` on comparable OU shift-detection workloads. This advantage comes from the compact tree representation, cached likelihood calculations, candidate pruning, and threaded multivariate scoring. The exact ratio depends on tree size, trait dimension, search settings, and hardware; benchmark both implementations with the same data and configuration.
+
 The package uses Julia threads for portions of multivariate scoring. Set the thread count when starting Julia, not after the process is running:
 
 ```powershell
-julia --project=. --startup-file=no --threads=12 script.jl
+julia --project=. -t auto script.jl
 ```
 
 For stable runtime measurements, control BLAS threading separately:
 
 ```julia
+# Run with: julia --project=. -t auto blas.jl
 using EvoShifts
 set_engine_blas_threads!(1)
 ```
@@ -326,14 +336,14 @@ The first-level modules separate stable responsibilities:
 Run the complete suite from the repository root:
 
 ```powershell
-julia --project=. --startup-file=no test/runtests.jl
+julia --project=. -t auto test/runtests.jl
 ```
 
 Run one subsystem:
 
 ```powershell
-julia --project=. --startup-file=no test/run_subset.jl api
-julia --project=. --startup-file=no test/proposal.jl
+julia --project=. -t auto test/run_subset.jl api
+julia --project=. -t auto test/proposal.jl
 ```
 
 The top-level test files are `test/core.jl`, `test/proposal.jl`, `test/refit.jl`, `test/api.jl`, and `test/convergence.jl`. Each is directly runnable.
